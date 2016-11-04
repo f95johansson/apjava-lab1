@@ -12,6 +12,9 @@ import javax.swing.text.StyledDocument;
 import java.awt.*;
 
 
+/**
+ * Specifies how a TestInfo object should be rendered in the GUI
+ */
 public class TestInfoRenderer implements ListCellRenderer<TestInfo> {
 
     @Override

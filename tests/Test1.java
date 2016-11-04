@@ -1,8 +1,7 @@
 public class Test1 implements TestClass  {
     private MyInt myInt;
 
-    public Test1() throws IndexOutOfBoundsException {
-        throw new IndexOutOfBoundsException("Hello");
+    public Test1() {
     }
 
     public void setUp() {

@@ -13,7 +13,9 @@ import java.util.Map;
 import java.util.Observable;
 
 /**
- * View
+ * Takes care of the GUI of the program.
+ *
+ * View in MVC.
  */
 public class UI extends Observable implements ActionListener {
 
@@ -24,68 +26,36 @@ public class UI extends Observable implements ActionListener {
     public static final Color COLOR_SUCCESS = new Color(80, 200, 147);
     public static final Color COLOR_FAIL = new Color(252, 57, 36);
     public static final Color COLOR_WARNING = new Color(252, 152, 12);
-    public static Color COLOR_TEXT = new Color(255, 255, 255);
+    public static final Color COLOR_TEXT = new Color(255, 255, 255);
 
     private DefaultListModel<TestInfo> mOutput;
     private JTextField mInput;
-    private JButton mRunButton;
     private JPanel mStatusBar;
 
     private Map<String, Integer> mCurrentTests;
     private boolean mTestFinished;
 
+    /**
+     * Starts the GUI using swing
+     */
     public UI() {
         SwingUtilities.invokeLater(this::setUpDarkUI);
     }
 
+    /**
+     * Start the ui and sets up all the necessary components.
+     * Must be run from the sing thread.
+     */
     private void setUpDarkUI() {
 
         JFrame window = new JFrame();
-        //window.setUndecorated(true);
         window.getContentPane().setBackground(BACKGROUND);
 
-        JToolBar toolBar = new JToolBar("Toolbar");
-        toolBar.setBackground(TRANSPARENT);
-        toolBar.setFloatable(false);
-        toolBar.setLayout(new FlowLayout(FlowLayout.CENTER, 6, 6));
+        window.add(setUpToolbar(), BorderLayout.NORTH);
 
-        mInput = new JTextField("Enter TestClass name");
-        mInput.setBackground(COLOR_FIELD);
-        mInput.setForeground(COLOR_TEXT);
-        //mInput.setBorder(new RoundedBorder(5));
-        mInput.setBorder(BorderFactory.createEmptyBorder());
-        mInput.setPreferredSize(new Dimension(204, 28));
-        mInput.addActionListener(this);
-        toolBar.add(mInput);
+        window.add(setUpOutputArea());
 
-
-        mRunButton = new JButton("▶");
-        mRunButton.setFont(new Font(mRunButton.getFont().getName(), Font.PLAIN, 18));
-        mRunButton.setForeground(COLOR_SUCCESS);
-        mRunButton.setBackground(COLOR_FIELD);
-        mRunButton.setOpaque(true);
-        mRunButton.setBorderPainted(false);
-        mRunButton.setPreferredSize(new Dimension(28, 28));
-        mRunButton.addActionListener(this);
-        toolBar.add(mRunButton);
-
-        window.add(toolBar, BorderLayout.NORTH);
-
-        mOutput = new DefaultListModel<>();
-        JList<TestInfo> list = new JList<>(mOutput);
-        list.setCellRenderer(new TestInfoRenderer());
-        JScrollPane content = new JScrollPane(list);
-        content.setBorder(BorderFactory.createMatteBorder(0, 6, 0, 6, TRANSPARENT));
-        content.setOpaque(false);
-        list.setBackground(COLOR_PANEL);
-        list.setForeground(Color.WHITE);
-        content.setBackground(TRANSPARENT);
-        window.add(content);
-
-        mStatusBar = new JPanel();
-        mStatusBar.setBackground(TRANSPARENT);
-        mStatusBar.add(new JLabel(" ")); // Sets correct height to fit text
-        mStatusBar.setOpaque(false);
+        mStatusBar = setUpStatusBar();
         window.add(mStatusBar, BorderLayout.SOUTH);
 
         window.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
@@ -96,50 +66,94 @@ public class UI extends Observable implements ActionListener {
         window.setVisible(true);
     }
 
-    private void setUpNativeUI() {
-        COLOR_TEXT = new Color(0, 0, 0);
+    /**
+     * Creates the toolbar. Must be run from the sing thread.
+     * @return The toolbar
+     */
+    private JToolBar setUpToolbar() {
+        JToolBar toolBar = new JToolBar();
+        toolBar.setBackground(TRANSPARENT);
+        toolBar.setLayout(new FlowLayout(FlowLayout.CENTER, 6, 6));
+        toolBar.setFloatable(false);
 
-        JFrame window = new JFrame();
-        window.getRootPane().putClientProperty("apple.awt.brushMetalLook", true);
-
-        JPanel toolBar = new JPanel();
-        //toolBar.setFloatable(false);
-        toolBar.setLayout(new FlowLayout(FlowLayout.LEFT, 0, 0));
-        toolBar.add(new JLabel("Enter class name:"));
-        mInput = new JTextField(14);
-        mInput.addActionListener(this);
+        mInput = setUpInputField();
         toolBar.add(mInput);
-        mRunButton = new JButton("Run tests");
-        mRunButton.addActionListener(this);
-        toolBar.add(mRunButton);
-        JButton clearButton = new JButton("Clear");
-        clearButton.addActionListener(e -> {
-            mCurrentTests.clear();
-            mOutput.clear();
-            clearStatus();
-        });
-        toolBar.add(clearButton);
-        window.add(toolBar, BorderLayout.NORTH);
 
+        toolBar.add(setUpRunButton());
+        return toolBar;
+    }
+
+    /**
+     * Setups up the text field which user will input test class name.
+     * Hitting the enter key will having the text field in focus will start
+     * the tests. Must be run from the sing thread.
+     * @return A editable text field
+     */
+    private JTextField setUpInputField() {
+        JTextField input = new JTextField("Enter TestClass name");
+        input.setBackground(COLOR_FIELD);
+        input.setForeground(COLOR_TEXT);
+        input.setBorder(BorderFactory.createEmptyBorder());
+        input.setPreferredSize(new Dimension(204, 28));
+        input.addActionListener(this);
+        return input;
+    }
+
+    /**
+     * Creates a button which will run the tests (if possible).
+     * Must be run from the sing thread.
+     * @return The run button
+     */
+    private JButton setUpRunButton() {
+        JButton runButton = new JButton("▶");
+        runButton.setFont(
+                new Font(runButton.getFont().getName(), Font.PLAIN, 18));
+        runButton.setForeground(COLOR_SUCCESS);
+        runButton.setBackground(COLOR_FIELD);
+        runButton.setOpaque(true);
+        runButton.setBorderPainted(false);
+        runButton.setPreferredSize(new Dimension(28, 28));
+        runButton.addActionListener(this);
+        return runButton;
+    }
+
+    /**
+     * Setups a list which the result of the test will be shown. Uses
+     * TestInfoRenderer to handle the actual showing of each results.
+     * Must be run from the sing thread.
+     * @return A scrollable pane
+     */
+    private JScrollPane setUpOutputArea() {
         mOutput = new DefaultListModel<>();
         JList<TestInfo> list = new JList<>(mOutput);
         list.setCellRenderer(new TestInfoRenderer());
         JScrollPane content = new JScrollPane(list);
-        content.setBorder(BorderFactory.createMatteBorder(1, 0, 0, 0, new Color(168, 168, 168)));
+        content.setBorder(
+                BorderFactory.createMatteBorder(0, 6, 0, 6, TRANSPARENT));
+        content.setOpaque(false);
+        list.setBackground(COLOR_PANEL);
+        list.setForeground(Color.WHITE);
         content.setBackground(TRANSPARENT);
-        window.add(content);
-
-        mStatusBar = new JPanel();
-        mStatusBar.setBackground(TRANSPARENT);
-        mStatusBar.add(new JLabel(" "));
-        window.add(mStatusBar, BorderLayout.SOUTH);
-
-        window.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
-        window.setMinimumSize(new Dimension(460, 328));
-
-        window.setVisible(true);
+        return content;
     }
 
+    /**
+     * Setup a status bar which the summation of the test methods will be shown.
+     * Must be run from the sing thread.
+     * @return A status bar
+     */
+    private JPanel setUpStatusBar() {
+        JPanel statusBar = new JPanel();
+        statusBar.setBackground(TRANSPARENT);
+        statusBar.add(new JLabel(" ")); // Sets correct height to fit text
+        statusBar.setOpaque(false);
+        return statusBar;
+    }
+
+    /**
+     * Adds information to the user about something they did wrong/haven't done.
+     * @param message Message to show user
+     */
     public void addUserError(String message) {
         SwingUtilities.invokeLater(() -> {
             TestInfo info = new TestInfo(TestInfo.Status.FAILED, message);
@@ -147,6 +161,10 @@ public class UI extends Observable implements ActionListener {
         });
     }
 
+    /**
+     * Adds a waring message about a test
+     * @param message Message with a warning
+     */
     public void addTestWarning(String message) {
         SwingUtilities.invokeLater(() -> {
             TestInfo info = new TestInfo(TestInfo.Status.WARNING, message);
@@ -154,6 +172,10 @@ public class UI extends Observable implements ActionListener {
         });
     }
 
+    /**
+     * Should be added when a test have started
+     * @param testName Name of test
+     */
     public void addTestStarted(String testName) {
 
         SwingUtilities.invokeLater(() -> {
@@ -165,15 +187,33 @@ public class UI extends Observable implements ActionListener {
         });
     }
 
+    /**
+     * Should be added when a test has finished
+     * @param testName Name of test
+     * @param success If the test succeeded
+     */
     public void addTestResult(String testName, Boolean success) {
         addTestResult(testName, success, null);
     }
 
-    public void addTestResult(String testName, Boolean success, Throwable exception) {
+    /**
+     * Should be added when a test finished with a exception
+     * @param testName Name of test
+     * @param success If the test succeeded
+     * @param exception The exception which was thrown
+     */
+    public void addTestResult(String testName,
+                              Boolean success,
+                              Throwable exception) {
+
         SwingUtilities.invokeLater(() -> {
             if (mCurrentTests.containsKey(testName)) {
-                TestInfo info = mOutput.get(mCurrentTests.get(testName));
-                info.setStatus(success ? TestInfo.Status.SUCCESS : TestInfo.Status.FAILED);
+                TestInfo info =
+                        mOutput.get(mCurrentTests.get(testName));
+
+                info.setStatus(success ?
+                               TestInfo.Status.SUCCESS :
+                               TestInfo.Status.FAILED);
 
                 if (exception != null) {
                     info.setException(exception);
@@ -181,10 +221,25 @@ public class UI extends Observable implements ActionListener {
                 mOutput.set(mCurrentTests.get(testName), info); // force refresh
 
                 updateStatusRunning();
+
+            } else {
+                TestInfo.Status status = success ?
+                                         TestInfo.Status.SUCCESS :
+                                         TestInfo.Status.FAILED;
+
+                TestInfo info = new TestInfo(status, testName);
+                if (exception != null) {
+                    info.setException(exception);
+                }
+                mOutput.set(mCurrentTests.get(testName), info);
+                updateStatusRunning();
             }
         });
     }
 
+    /**
+     * Clear status bar
+     */
     public void clearStatus() {
         SwingUtilities.invokeLater(() -> {
             mStatusBar.removeAll();
@@ -192,11 +247,23 @@ public class UI extends Observable implements ActionListener {
         });
     }
 
-    public void updateStatusDone(int done, int succeeded, int failed, int exceptions) {
+    /**
+     * Update the status bar with information from when every test have finished
+     * @param done How many test have finished
+     * @param succeeded How many succeeded
+     * @param failed How many failed
+     * @param exceptions How many gave an exception
+     */
+    public void updateStatusDone(int done, int succeeded,
+                                 int failed, int exceptions) {
         mTestFinished = true;
         updateStatus(done, "done", succeeded, failed, exceptions);
     }
 
+    /**
+     * Update the status bar with the current information about the test
+     * which are running.
+     */
     public void updateStatusRunning() {
         if (mTestFinished) {
             return;
@@ -225,6 +292,14 @@ public class UI extends Observable implements ActionListener {
         }
     }
 
+    /**
+     * Update status bar with specified information
+     * @param firstCount How many of the first count
+     * @param firstQuantifier What kind is the first counr
+     * @param succeeded How many succeeded
+     * @param failed How many failed
+     * @param exceptions How many exceptions
+     */
     private void updateStatus(int firstCount, String firstQuantifier,
                               int succeeded,
                               int failed,
@@ -232,21 +307,40 @@ public class UI extends Observable implements ActionListener {
 
         SwingUtilities.invokeLater(() -> {
             mStatusBar.removeAll();
-            mStatusBar.add(createLabel(firstCount + " "+firstQuantifier+"  ", COLOR_TEXT));
-            mStatusBar.add(createLabel("  " + succeeded + " succeeded", COLOR_SUCCESS));
+
+            String first = firstCount + " "+firstQuantifier+"  ";
+            mStatusBar.add(createLabel(first, COLOR_TEXT));
+
+            String second = "  " + succeeded + " succeeded";
+            mStatusBar.add(createLabel(second, COLOR_SUCCESS));
+
             mStatusBar.add(createLabel("/ ", COLOR_TEXT));
-            mStatusBar.add(createLabel(failed + " failed (" + exceptions + " exceptions)", COLOR_FAIL));
+
+            String third = failed + " failed (" + exceptions + " exceptions)";
+            mStatusBar.add(createLabel(third, COLOR_FAIL));
+
             mStatusBar.validate();
             mStatusBar.repaint();
         });
     }
 
+    /**
+     * Create a label in specified color
+     * @param text Text of label
+     * @param color Color of label
+     * @return The label
+     */
     private JLabel createLabel(String text, Color color) {
         JLabel label = new JLabel(text);
         label.setForeground(color);
         return label;
     }
 
+    /**
+     * Triggered whenever the user hits the run button or the enter key
+     * when focused on the input field
+     * @param event The event which were triggered
+     */
     @Override
     public void actionPerformed(ActionEvent event) {
         mCurrentTests = new HashMap<>();

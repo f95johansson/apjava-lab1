@@ -19,6 +19,8 @@ import java.util.concurrent.Executors;
  * Runs a TestClass. All methods in a TestClass will be run as a test. If
  * method setUp exist, it will run before each test. If method tearDown exist,
  * it will run after each test.
+ *
+ * Model (logic) in MVC
  */
 public class Tester implements Runnable {
 
@@ -149,9 +151,6 @@ public class Tester implements Runnable {
                     mResultListener.onTestWarning(method, "Did not run. Method should return boolean and take no parameters");
                     executed.countDown();
                 }
-            } else {
-                mResultListener.onTestWarning(method, "Did not run. Method should start with prefix \"test\"");
-                executed.countDown();
             }
         }
         try {
