@@ -11,6 +11,7 @@ import java.awt.event.ActionListener;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Observable;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * Takes care of the GUI of the program.
@@ -33,7 +34,7 @@ public class UI extends Observable implements ActionListener {
     private JPanel mStatusBar;
 
     private Map<String, Integer> mCurrentTests;
-    private boolean mTestFinished;
+    private AtomicBoolean mTestFinished = new AtomicBoolean();
 
     /**
      * Starts the GUI using swing
@@ -256,7 +257,7 @@ public class UI extends Observable implements ActionListener {
      */
     public void updateStatusDone(int done, int succeeded,
                                  int failed, int exceptions) {
-        mTestFinished = true;
+        mTestFinished.set(true);
         updateStatus(done, "done", succeeded, failed, exceptions);
     }
 
@@ -265,8 +266,8 @@ public class UI extends Observable implements ActionListener {
      * which are running.
      */
     public void updateStatusRunning() {
-        if (mTestFinished) {
-            return;
+        if (mTestFinished.get()) {
+            return; // don't update running tests if all have finished
         }
 
         int running = 0;
@@ -347,7 +348,7 @@ public class UI extends Observable implements ActionListener {
         mOutput.clear();
         clearStatus();
         setChanged();
-        mTestFinished = false;
+        mTestFinished.set(false);
 
         notifyObservers(mInput.getText());
     }

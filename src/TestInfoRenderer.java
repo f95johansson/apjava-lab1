@@ -17,14 +17,23 @@ import java.awt.*;
  */
 public class TestInfoRenderer implements ListCellRenderer<TestInfo> {
 
+    /**
+     * Will render a TestInfo as a colored text to a JList.
+     * @param list List to render to
+     * @param value TestInfo used to render
+     * @param index Index in list
+     * @param isSelected If selected
+     * @param cellHasFocus If has focus
+     * @return The rendered component to put in list
+     */
     @Override
-    public Component getListCellRendererComponent(JList<? extends TestInfo> list,
-                                                  TestInfo value,
+    public Component getListCellRendererComponent(JList<? extends TestInfo> list
+                                                , TestInfo value,
                                                   int index,
                                                   boolean isSelected,
                                                   boolean cellHasFocus) {
         JTextPane pane = new JTextPane();
-        pane.setBackground(new Color(0, 0, 0, 0));
+        pane.setBackground(UI.TRANSPARENT);
         pane.setForeground(UI.COLOR_TEXT);
         pane.setBorder(BorderFactory.createLineBorder(UI.TRANSPARENT, 6));
         StyledDocument text = pane.getStyledDocument();
@@ -33,10 +42,21 @@ public class TestInfoRenderer implements ListCellRenderer<TestInfo> {
             printIcon(value.getStatus(), text);
             printText(value, text);
 
-        } catch (BadLocationException e) {}
+        } catch (BadLocationException e) {
+            // Thrown when text insert below 0 or above length of text and
+            // should never happen as each insertString is in the end of text
+            // Still ugly code to not ignore exception
+        }
         return pane;
     }
 
+    /**
+     * Insert an icon based on test status
+     * @param status Status of test
+     * @param text Text to insert into
+     * @throws BadLocationException If inserting text below 0 or above length of
+     *                              text, which it should never do
+     */
     private void printIcon(TestInfo.Status status, StyledDocument text)
                                             throws BadLocationException {
 
@@ -60,6 +80,13 @@ public class TestInfoRenderer implements ListCellRenderer<TestInfo> {
         }
     }
 
+    /**
+     * Insert text.
+     * @param value TestInfo to generate text based upon
+     * @param text Text to add the new text onto
+     * @throws BadLocationException If inserting text below 0 or above length of
+     *                              text, which it should never do
+     */
     private void printText(TestInfo value, StyledDocument text)
                                             throws BadLocationException {
 

@@ -106,7 +106,8 @@ public class Tester implements Runnable {
     }
 
     /**
-     * Run all the test methods, with setUp/tearDown if they exists
+     * Run all the test methods, with setUp/tearDown if they exists.
+     * Will run each test in a separate thread.
      */
     public void run() {
         Method[] methods = extractMethods();
@@ -116,47 +117,43 @@ public class Tester implements Runnable {
         resultsCount.put(TestResult.FAILED_WITHOUT_EXCEPTION, 0);
         resultsCount.put(TestResult.FAILED_FROM_EXCEPTION, 0);
 
-        // run max 6 tests at a time
+        // run max 6 tests at the same time
         ExecutorService executor = Executors.newFixedThreadPool(6);
 
-        CountDownLatch executed = new CountDownLatch(methods.length);
+        // Is used to know when all tests have finished
+        CountDownLatch countDown = new CountDownLatch(methods.length);
 
         for (Method method : methods) {
             if (method.getName().equals("setUp")
                     || method.getName().equals("tearDown")) {
+                countDown.countDown();
                 continue;
             }
 
             if (method.getName().startsWith("test")) {
-                if (methodIsCorrectFormat(method, 0, boolean.class, Boolean.class)) {
+                if (methodIsCorrectFormat(method, 0,
+                                          boolean.class, Boolean.class)) {
 
                     mResultListener.onTestStart(method);
-                    executor.execute(() -> {
-                        try {
-                            // new test object for each test for thread safety
-                            TestClass test = createTest();
-
-                            setUp(test);
-                            TestResult result = runTestMethod(test, method);
-                            countUpResult(result, resultsCount);
-                            tearDown(test);
-                            executed.countDown();
-                        } catch (InstantiationException e) {
-                            mResultListener.onNonTestException(e);
-                            executed.countDown();
-                        }
-                    });
+                    executor.execute(() -> runTestCase(method,
+                                                       resultsCount,
+                                                       countDown));
 
                 } else {
-                    mResultListener.onTestWarning(method, "Did not run. Method should return boolean and take no parameters");
-                    executed.countDown();
+                    mResultListener.onTestWarning(method,
+                            "Did not run. Method should return boolean " +
+                            "and take no parameters");
+                    countDown.countDown();
                 }
+            } else {
+                countDown.countDown();
             }
         }
         try {
-            executed.await(); // wait for all tests to finish
+            countDown.await(); // wait for all tests to finish
+                               // (for countDown to reach 0)
         } catch (InterruptedException e) {
-            e.printStackTrace(); // TODO empty catch
+            mResultListener.onNonTestException(e);
         }
         executor.shutdown();
 
@@ -164,6 +161,28 @@ public class Tester implements Runnable {
                 resultsCount.get(TestResult.SUCCESS),
                 resultsCount.get(TestResult.FAILED_WITHOUT_EXCEPTION),
                 resultsCount.get(TestResult.FAILED_FROM_EXCEPTION));
+    }
+
+    /**
+     * Run a test method with setUp and tearDown.
+     * @param method Method to run
+     * @param resultsCount Used to sum up the total result
+     * @param countDown To indicate how many method have been run
+     */
+    private void runTestCase(Method method, Map<TestResult, Integer> resultsCount, CountDownLatch countDown) {
+        try {
+            // new test object for each test for thread safety
+            TestClass test = createTest();
+
+            setUp(test);
+            TestResult result = runTestMethod(test, method);
+            countUpResult(result, resultsCount);
+            tearDown(test);
+        } catch (InstantiationException e) {
+            mResultListener.onNonTestException(e);
+
+        }
+        countDown.countDown();
     }
 
     /**
