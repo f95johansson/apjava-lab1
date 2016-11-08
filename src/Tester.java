@@ -282,8 +282,10 @@ public class Tester implements Runnable {
                 throw new IllegalStateException("No access to method even " +
                         "if it's public: "+mSetUp.getName());
             } catch (InvocationTargetException ite) {
-                throw new IllegalStateException("setUp method gave following " +
-                        "exception: "+ite.getTargetException().getMessage());
+                String name = ite.getTargetException().getClass().getName();
+                Exception e = new Exception("setUp failed with " +
+                        "following exception: "+name);
+                mResultListener.onNonTestException(e);
             }
         }
     }
@@ -301,9 +303,10 @@ public class Tester implements Runnable {
                 throw new IllegalStateException("No access to method even " +
                         "if it's public: "+mTearDown.getName());
             } catch (InvocationTargetException ite) {
-                throw new IllegalStateException(
-                        "tearDown method gave following exception: "
-                                + ite.getTargetException().getMessage());
+                String name = ite.getTargetException().getClass().getName();
+                Exception e = new Exception("tearDown failed with " +
+                        "following exception: "+name);
+                mResultListener.onNonTestException(e);
             }
         }
     }
