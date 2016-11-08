@@ -45,7 +45,7 @@ public class TestInfoRenderer implements ListCellRenderer<TestInfo> {
         } catch (BadLocationException e) {
             // Thrown when text insert below 0 or above length of text and
             // should never happen as each insertString is in the end of text
-            // Still ugly code to not ignore exception
+            throw new IllegalStateException("Could not insert text");
         }
         return pane;
     }
