@@ -29,6 +29,7 @@ public class Tester implements Runnable {
     private Method mTearDown;
     private ResultListener mResultListener;
 
+
     /**
      * Interface for the listener of the feedback from the test results
      */
@@ -44,6 +45,7 @@ public class Tester implements Runnable {
         void onNonTestException(Throwable exception);
     }
 
+
     /**
      * Helper enum to keep track of results from tests
      */
@@ -52,6 +54,7 @@ public class Tester implements Runnable {
         FAILED_FROM_EXCEPTION,
         FAILED_WITHOUT_EXCEPTION
     }
+
 
     /**
      * Will assert if class and constructor is valid from the given class.
@@ -124,31 +127,25 @@ public class Tester implements Runnable {
         CountDownLatch countDown = new CountDownLatch(methods.length);
 
         for (Method method : methods) {
-            if (method.getName().equals("setUp")
-                    || method.getName().equals("tearDown")) {
-                countDown.countDown();
-                continue;
-            }
-
             if (method.getName().startsWith("test")) {
                 if (methodIsCorrectFormat(method, 0,
                                           boolean.class, Boolean.class)) {
 
                     mResultListener.onTestStart(method);
+                    // Run on test on separate thread
                     executor.execute(() -> runTestCase(method,
                                                        resultsCount,
                                                        countDown));
 
                 } else {
-                    mResultListener.onTestWarning(method,
-                            "Did not run. Method should return boolean " +
-                            "and take no parameters");
+                    giveWarningFeedback(method);
                     countDown.countDown();
                 }
-            } else {
+            } else { // not prefix "test"
                 countDown.countDown();
             }
         }
+
         try {
             countDown.await(); // wait for all tests to finish
                                // (for countDown to reach 0)
@@ -169,7 +166,9 @@ public class Tester implements Runnable {
      * @param resultsCount Used to sum up the total result
      * @param countDown To indicate how many method have been run
      */
-    private void runTestCase(Method method, Map<TestResult, Integer> resultsCount, CountDownLatch countDown) {
+    private void runTestCase(Method method,
+                             Map<TestResult, Integer> resultsCount,
+                             CountDownLatch countDown) {
         try {
             // new test object for each test for thread safety
             TestClass test = createTest();
@@ -211,8 +210,8 @@ public class Tester implements Runnable {
         try {
             Boolean returnValue = (Boolean) method.invoke(test);
             mResultListener.onTestFinished(method, returnValue);
-            return returnValue ? TestResult.SUCCESS :
-                                 TestResult.FAILED_WITHOUT_EXCEPTION;
+            return returnValue ? TestResult.SUCCESS
+                               : TestResult.FAILED_WITHOUT_EXCEPTION;
 
         } catch (IllegalAccessException ie) {
             // already tested to be public
@@ -321,5 +320,26 @@ public class Tester implements Runnable {
         return method.getParameterCount() == parameters
                 && Modifier.isPublic(method.getModifiers())
                 && Arrays.asList(returnTypes).contains(method.getReturnType());
+    }
+
+    /**
+     * Give appropiet feedback on why a method did not run.
+     * @param method Method which did not run
+     */
+    private void giveWarningFeedback(Method method) {
+        StringBuilder builder = new StringBuilder("Did not run: ");
+        if (method.getParameterCount() != 0) {
+            builder.append("Method should have no parameters. ");
+        }
+        if (!Modifier.isPublic(method.getModifiers())) {
+            builder.append("Method must be public. ");
+        }
+        Class<?> returnType = method.getReturnType();
+        if (!returnType.equals(boolean.class)
+                && !returnType.equals(Boolean.class)) {
+            builder.append("Method must return a boolean. ");
+        }
+
+        mResultListener.onTestWarning(method, builder.toString());
     }
 }

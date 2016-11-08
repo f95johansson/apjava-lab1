@@ -7,6 +7,7 @@
 import java.lang.reflect.Method;
 import java.util.Observable;
 import java.util.Observer;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * Takes care of user interaction and starts the necessary test.
@@ -52,33 +53,33 @@ public class MyUnitTester implements Observer {
     private static class TestListener implements Tester.ResultListener {
 
         private UI mUI;
-        private boolean isStopped = false;
+        private AtomicBoolean isStopped = new AtomicBoolean(false);
 
         public TestListener(UI ui) {
             mUI = ui;
         }
 
         public void stop() {
-            isStopped = true;
+            isStopped.set(true);
         }
 
         @Override
         public void onTestStart(Method method) {
-            if (!isStopped) {
+            if (!isStopped.get()) {
                 mUI.addTestStarted(method.getName());
             }
         }
 
         @Override
         public void onTestWarning(Method method, String reason) {
-            if (!isStopped) {
+            if (!isStopped.get()) {
                 mUI.addTestWarning(method.getName()+": "+reason);
             }
         }
 
         @Override
         public void onTestFinished(Method method, boolean success) {
-            if (!isStopped) {
+            if (!isStopped.get()) {
                 mUI.addTestResult(method.getName(), success);
             }
         }
@@ -86,7 +87,7 @@ public class MyUnitTester implements Observer {
         @Override
         public void onTestFinished(Method method,
                                    boolean success, Throwable exception) {
-            if (!isStopped) {
+            if (!isStopped.get()) {
                 mUI.addTestResult(method.getName(), success, exception);
             }
         }
@@ -95,7 +96,7 @@ public class MyUnitTester implements Observer {
         public void onAllTestsFinished(int successes,
                                        int failedWithoutException,
                                        int failedFromException) {
-            if (!isStopped) {
+            if (!isStopped.get()) {
                 mUI.updateStatusDone(
                         successes+failedWithoutException+failedFromException,
                         successes,
@@ -106,9 +107,9 @@ public class MyUnitTester implements Observer {
 
         @Override
         public void onNonTestException(Throwable exception) {
-            if (!isStopped) {
+            if (!isStopped.get()) {
                 mUI.addTestWarning(exception.getMessage());
-                isStopped = true;
+                isStopped.set(true);
             }
         }
 

@@ -212,9 +212,9 @@ public class UI extends Observable implements ActionListener {
                 TestInfo info =
                         mOutput.get(mCurrentTests.get(testName));
 
-                info.setStatus(success ?
-                               TestInfo.Status.SUCCESS :
-                               TestInfo.Status.FAILED);
+                info.setStatus(success
+                               ? TestInfo.Status.SUCCESS
+                               : TestInfo.Status.FAILED);
 
                 if (exception != null) {
                     info.setException(exception);
@@ -224,9 +224,9 @@ public class UI extends Observable implements ActionListener {
                 updateStatusRunning();
 
             } else {
-                TestInfo.Status status = success ?
-                                         TestInfo.Status.SUCCESS :
-                                         TestInfo.Status.FAILED;
+                TestInfo.Status status = success
+                                         ? TestInfo.Status.SUCCESS
+                                         : TestInfo.Status.FAILED;
 
                 TestInfo info = new TestInfo(status, testName);
                 if (exception != null) {

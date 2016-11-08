@@ -19,7 +19,7 @@ public class TestInfoRenderer implements ListCellRenderer<TestInfo> {
 
     /**
      * Will render a TestInfo as a colored text to a JList.
-     * @param list List to render to
+     * @param l List to render to
      * @param value TestInfo used to render
      * @param index Index in list
      * @param isSelected If selected
@@ -27,8 +27,8 @@ public class TestInfoRenderer implements ListCellRenderer<TestInfo> {
      * @return The rendered component to put in list
      */
     @Override
-    public Component getListCellRendererComponent(JList<? extends TestInfo> list
-                                                , TestInfo value,
+    public Component getListCellRendererComponent(JList<? extends TestInfo> l,
+                                                  TestInfo value,
                                                   int index,
                                                   boolean isSelected,
                                                   boolean cellHasFocus) {
@@ -61,22 +61,23 @@ public class TestInfoRenderer implements ListCellRenderer<TestInfo> {
                                             throws BadLocationException {
 
         Style textColor = text.addStyle("TextColor", null);
+
         switch (status) {
-            case SUCCESS:
-                StyleConstants.setForeground(textColor, UI.COLOR_SUCCESS);
-                text.insertString(text.getLength(), " ✔ ", textColor);
-                break;
-            case FAILED:
-                StyleConstants.setForeground(textColor, UI.COLOR_FAIL);
-                text.insertString(text.getLength(), " ✘ ", textColor);
-                break;
-            case RUNNING:
-                text.insertString(text.getLength(), " ↻ ", null);
-                break;
-            case WARNING:
-                StyleConstants.setForeground(textColor, UI.COLOR_WARNING);
-                text.insertString(text.getLength(), " ⚠ ", textColor);
-                break;
+        case SUCCESS:
+            StyleConstants.setForeground(textColor, UI.COLOR_SUCCESS);
+            text.insertString(text.getLength(), " ✔ ", textColor);
+            break;
+        case FAILED:
+            StyleConstants.setForeground(textColor, UI.COLOR_FAIL);
+            text.insertString(text.getLength(), " ✘ ", textColor);
+            break;
+        case RUNNING:
+            text.insertString(text.getLength(), " ↻ ", null);
+            break;
+        case WARNING:
+            StyleConstants.setForeground(textColor, UI.COLOR_WARNING);
+            text.insertString(text.getLength(), " ⚠ ", textColor);
+            break;
         }
     }
 
