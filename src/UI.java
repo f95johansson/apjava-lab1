@@ -60,7 +60,7 @@ public class UI extends Observable implements ActionListener {
         window.add(mStatusBar, BorderLayout.SOUTH);
 
         window.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
-        window.setMinimumSize(new Dimension(350, 430));
+        window.setMinimumSize(new Dimension(380, 450));
 
         window.setLocationRelativeTo(null);
 
